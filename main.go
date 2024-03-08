@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 )
@@ -23,4 +24,16 @@ func main() {
 		log.Fatal(err)
 	}
 	values.PrintTopN(10)
+
+	uv, err := UniqueVisitors(results)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(uv)
+
+	pv, err := PageViews(results)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(pv)
 }
