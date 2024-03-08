@@ -18,7 +18,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	values, err := NewCounter(results, "UserAgent")
+	values, err := CountUserAgents(results)
 	if err != nil {
 		log.Fatal(err)
 	}

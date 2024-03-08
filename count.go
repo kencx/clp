@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"time"
 )
 
 type Counter map[string]int
@@ -28,6 +29,28 @@ func NewCounter(entries Entries, field string) (Counter, error) {
 	}
 
 	return counter, nil
+}
+
+func NewCounterFilteredTime(entries Entries, field string, d time.Duration) (Counter, error) {
+	var filtered Entries
+
+	for _, entry := range entries {
+		key, err := getStructField(entry, "Timestamp")
+		if err != nil {
+			return nil, err
+		}
+
+		floatKey, err := strconv.ParseFloat(key, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		t := time.Unix(int64(floatKey), 0)
+		if !time.Now().After(t.Add(d)) {
+			filtered = append(filtered, entry)
+		}
+	}
+	return NewCounter(filtered, field)
 }
 
 // dynamically get struct field
@@ -65,6 +88,8 @@ func getStructField(v interface{}, field string) (string, error) {
 
 	case reflect.Int:
 		return strconv.FormatInt(fv.Int(), 10), nil
+	case reflect.Float64:
+		return strconv.FormatFloat(fv.Float(), 'f', -1, 64), nil
 	case reflect.Bool:
 		return strconv.FormatBool(fv.Bool()), nil
 	default:
