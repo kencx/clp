@@ -14,12 +14,12 @@ func main() {
 	}
 	defer f.Close()
 
-	results, err := parseFile(f)
+	results, err := decodeFile(f)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	values, err := CountUserAgents(results)
+	values, err := CountRemoteIPs(results)
 	if err != nil {
 		log.Fatal(err)
 	}

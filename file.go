@@ -1,26 +1,21 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"io"
 )
 
-func parseFile(f io.Reader) (Entries, error) {
+func decodeFile(f io.Reader) (Entries, error) {
 	var results Entries
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
+	dec := json.NewDecoder(f)
+
+	for {
 		var res Entry
-
-		err := json.Unmarshal(scanner.Bytes(), &res)
-		if err != nil {
+		if err := dec.Decode(&res); err == io.EOF {
+			break
+		} else if err != nil {
 			return nil, err
 		}
-
-		if err := scanner.Err(); err != nil {
-			return nil, err
-		}
-
 		results = append(results, res)
 	}
 	return results, nil
