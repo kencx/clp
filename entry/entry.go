@@ -1,4 +1,4 @@
-package main
+package entry
 
 type Entry struct {
 	Level           string   `json:"level"`

@@ -1,4 +1,4 @@
-package main
+package stats
 
 import (
 	"fmt"
@@ -6,12 +6,14 @@ import (
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/kencx/clp/entry"
 )
 
 type Counter map[string]int
 
 // count unique occurences of given field in Entries
-func NewCounter(entries Entries, field string) (Counter, error) {
+func NewCounter(entries entry.Entries, field string) (Counter, error) {
 	counter := make(Counter)
 
 	for _, entry := range entries {
@@ -31,8 +33,8 @@ func NewCounter(entries Entries, field string) (Counter, error) {
 	return counter, nil
 }
 
-func NewCounterFilteredTime(entries Entries, field string, d time.Duration) (Counter, error) {
-	var filtered Entries
+func NewCounterFilteredTime(entries entry.Entries, field string, d time.Duration) (Counter, error) {
+	var filtered entry.Entries
 
 	for _, entry := range entries {
 		key, err := getStructField(entry, "Timestamp")
