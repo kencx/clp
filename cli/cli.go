@@ -9,19 +9,28 @@ import (
 	"github.com/kencx/clp/stats"
 )
 
+var tag = "v0.1.0"
+
 func Run() int {
 	var (
 		filename string
 		period   string
 		crawlers bool
 		color    bool
+		version  bool
 	)
 
 	flag.StringVar(&filename, "file", "access.log", "path to access log")
 	flag.StringVar(&period, "time", "30d", "time period to filter")
 	flag.BoolVar(&crawlers, "exclude-crawler", false, "exclude crawlers")
 	flag.BoolVar(&color, "color", false, "print with color")
+	flag.BoolVar(&version, "version", false, "print version")
 	flag.Parse()
+
+	if version {
+		fmt.Println(tag)
+		return 0
+	}
 
 	f, err := os.Open(filename)
 	if err != nil {
