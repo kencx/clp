@@ -11,6 +11,19 @@ import (
 
 var tag = "v0.1.0"
 
+const (
+	helpText = `usage: clp [flags]
+
+  Flags:
+    -file        path to access log
+    -time        time period to filter
+    -no-crawler  exclude crawlers
+    -version     print version
+    -color       print with color
+    -help        print help
+`
+)
+
 func Run() int {
 	var (
 		filename string
@@ -18,18 +31,32 @@ func Run() int {
 		crawlers bool
 		color    bool
 		version  bool
+		help     bool
 	)
 
 	flag.StringVar(&filename, "file", "access.log", "path to access log")
 	flag.StringVar(&period, "time", "30d", "time period to filter")
-	flag.BoolVar(&crawlers, "exclude-crawler", false, "exclude crawlers")
+	flag.BoolVar(&crawlers, "no-crawler", false, "exclude crawlers")
 	flag.BoolVar(&color, "color", false, "print with color")
 	flag.BoolVar(&version, "version", false, "print version")
+	flag.BoolVar(&help, "help", false, "print help")
+
+	flag.Usage = func() { os.Stdout.Write([]byte(helpText)) }
 	flag.Parse()
+
+	if help {
+		fmt.Print(helpText)
+		return 0
+	}
 
 	if version {
 		fmt.Println(tag)
 		return 0
+	}
+
+	if len(os.Args) < 1 {
+		fmt.Print(helpText)
+		return 1
 	}
 
 	f, err := os.Open(filename)
