@@ -2,12 +2,77 @@ package stats
 
 import (
 	"fmt"
-	"regexp"
-	"strconv"
-	"time"
 
 	"github.com/kencx/clp/entry"
 )
+
+func Summary(entries entry.Entries, period string, crawlers, color bool) error {
+	filtered, err := FilterByPeriod(entries, period)
+	if err != nil {
+		return err
+	}
+
+	if crawlers {
+		filtered, err = FilterByBots(filtered)
+		if err != nil {
+			return err
+		}
+	}
+
+	uv, err := UniqueVisitors(filtered)
+	if err != nil {
+		return err
+	}
+
+	uris, err := CountUris(filtered)
+	if err != nil {
+		return err
+	}
+	remoteIp, err := CountRemoteIPs(filtered)
+	if err != nil {
+		return err
+	}
+	status, err := CountStatusCodes(filtered)
+	if err != nil {
+		return err
+	}
+	userAgents, err := CountUserAgents(filtered)
+	if err != nil {
+		return err
+	}
+	avg, large, small := DurationStats(filtered)
+
+	fmt.Println("Caddy Access Logs Summary Statistics")
+	fmt.Printf("Period: %s\n", period)
+	fmt.Println("")
+
+	fmt.Printf("Unique visitors: %d\n", uv)
+	fmt.Printf("Total page views: %d\n", PageViews(filtered))
+	fmt.Printf("Average response time: %.3f ms\n", avg*1000)
+
+	fmt.Println("")
+	fmt.Println("URIs")
+	uris.PrintTopN(5)
+
+	fmt.Println("")
+	fmt.Println("Remote IPs")
+	remoteIp.PrintTopN(5)
+
+	fmt.Println("")
+	fmt.Println("Status Codes")
+	status.PrintTopN(5)
+
+	fmt.Println("")
+	fmt.Println("User Agents")
+	userAgents.PrintTopN(5)
+
+	fmt.Println("")
+	fmt.Printf("Response time distribution:\n")
+	fmt.Printf("Max: %.3f ms\n", large*1000)
+	fmt.Printf("Min: %.3f ms\n", small*1000)
+
+	return nil
+}
 
 func CountUris(entries entry.Entries) (Counter, error) {
 	return NewCounter(entries, "Uri")
@@ -37,61 +102,21 @@ func PageViews(entries entry.Entries) int {
 	return len(entries)
 }
 
-func AverageDuration(entries entry.Entries) float64 {
-	var res float64
+func DurationStats(entries entry.Entries) (float64, float64, float64) {
+	var sum float64
+	var largest float64
+	var smallest float64
 
 	for _, entry := range entries {
-		res += entry.Duration
-	}
-	return res / float64(len(entries))
-}
+		sum += entry.Duration
+		largest = max(entry.Duration, largest)
 
-func Summary(entries entry.Entries, duration string, crawlers bool) error {
-	_, err := parseDuration(duration)
-	if err != nil {
-		return err
-	}
-
-	uv, err := UniqueVisitors(entries)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Unique visitors: %d\n", uv)
-	fmt.Printf("Total page views: %d\n", PageViews(entries))
-	fmt.Printf("Average response time: %.3f ms\n", AverageDuration(entries)*1000)
-
-	return nil
-}
-
-func parseDuration(duration string) (time.Duration, error) {
-	dMap := map[string]time.Duration{
-		"h": time.Hour,
-		"d": 24 * time.Hour,
-		"w": 7 * 24 * time.Hour,
-		"m": 30 * 24 * time.Hour,
-		"y": 365 * 24 * time.Hour,
-	}
-
-	rx := regexp.MustCompile(`(\d+)(\w)$`)
-	matches := rx.FindAllStringSubmatch(duration, -1)
-
-	var number, unitString string
-	for _, match := range matches {
-		number = match[1]
-		unitString = match[2]
+		if smallest > 0 {
+			smallest = min(entry.Duration, smallest)
+		} else {
+			smallest = entry.Duration
+		}
 
 	}
-
-	multiple, err := strconv.Atoi(number)
-	if err != nil {
-		return -1, err
-	}
-
-	unit, ok := dMap[unitString]
-	if !ok {
-		return -1, fmt.Errorf("invalid unit: %v", unitString)
-	}
-
-	return time.Duration(multiple) * unit, nil
+	return sum / float64(len(entries)), largest, smallest
 }

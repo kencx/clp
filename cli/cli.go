@@ -14,11 +14,13 @@ func Run() int {
 		filename string
 		period   string
 		crawlers bool
+		color    bool
 	)
 
 	flag.StringVar(&filename, "file", "access.log", "path to access log")
 	flag.StringVar(&period, "time", "30d", "time period to filter")
 	flag.BoolVar(&crawlers, "exclude-crawler", false, "exclude crawlers")
+	flag.BoolVar(&color, "color", false, "print with color")
 	flag.Parse()
 
 	f, err := os.Open(filename)
@@ -34,7 +36,7 @@ func Run() int {
 		return 1
 	}
 
-	if err = stats.Summary(entries, period, crawlers); err != nil {
+	if err = stats.Summary(entries, period, crawlers, color); err != nil {
 		fmt.Println(err)
 		return 1
 	}

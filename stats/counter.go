@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
-	"time"
 
 	"github.com/kencx/clp/entry"
 )
@@ -22,6 +21,10 @@ func NewCounter(entries entry.Entries, field string) (Counter, error) {
 			return nil, err
 		}
 
+		if key == "" {
+			continue
+		}
+
 		_, ok := counter[key]
 		if !ok {
 			counter[key] = 1
@@ -33,24 +36,10 @@ func NewCounter(entries entry.Entries, field string) (Counter, error) {
 	return counter, nil
 }
 
-func NewCounterFilteredTime(entries entry.Entries, field string, d time.Duration) (Counter, error) {
-	var filtered entry.Entries
-
-	for _, entry := range entries {
-		key, err := getStructField(entry, "Timestamp")
-		if err != nil {
-			return nil, err
-		}
-
-		floatKey, err := strconv.ParseFloat(key, 64)
-		if err != nil {
-			return nil, err
-		}
-
-		t := time.Unix(int64(floatKey), 0)
-		if !time.Now().After(t.Add(d)) {
-			filtered = append(filtered, entry)
-		}
+func NewCounterFilteredTime(entries entry.Entries, field string, period string) (Counter, error) {
+	filtered, err := FilterByPeriod(entries, period)
+	if err != nil {
+		return nil, err
 	}
 	return NewCounter(filtered, field)
 }
@@ -80,13 +69,9 @@ func getStructField(v interface{}, field string) (string, error) {
 	case reflect.Slice:
 		if fv.Len() > 0 {
 			elem := fv.Index(0)
-			if elem.String() == "" {
-				return "empty string", nil
-			}
-
 			return elem.String(), nil
 		}
-		return "empty slice", nil
+		return "", nil
 
 	case reflect.Int:
 		return strconv.FormatInt(fv.Int(), 10), nil
