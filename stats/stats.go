@@ -6,7 +6,7 @@ import (
 	"github.com/kencx/clp/entry"
 )
 
-func Summary(entries entry.Entries, period string, crawlers, color bool) error {
+func Summary(entries entry.Entries, n int, period string, crawlers, notFound, color bool) error {
 	filtered, err := FilterByPeriod(entries, period)
 	if err != nil {
 		return err
@@ -17,6 +17,10 @@ func Summary(entries entry.Entries, period string, crawlers, color bool) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if notFound {
+		filtered = Filter404(filtered)
 	}
 
 	uv, err := UniqueVisitors(filtered)
@@ -48,26 +52,34 @@ func Summary(entries entry.Entries, period string, crawlers, color bool) error {
 
 	fmt.Printf("Unique visitors: %d\n", uv)
 	fmt.Printf("Total page views: %d\n", PageViews(filtered))
-	fmt.Printf("Average response time: %.3f ms\n", avg*1000)
 
 	fmt.Println("")
 	fmt.Println("URIs")
-	uris.PrintTopN(5)
+	uris.PrintTopN(n)
 
 	fmt.Println("")
 	fmt.Println("Remote IPs")
-	remoteIp.PrintTopN(5)
+	remoteIp.PrintTopN(n)
 
 	fmt.Println("")
-	fmt.Println("Status Codes")
-	status.PrintTopN(5)
+	if notFound {
+		fmt.Println("Status Codes (filtered)")
+	} else {
+		fmt.Println("Status Codes")
+	}
+	status.PrintTopN(n)
 
 	fmt.Println("")
-	fmt.Println("User Agents")
-	userAgents.PrintTopN(5)
+	if crawlers {
+		fmt.Println("User Agents (filtered)")
+	} else {
+		fmt.Println("User Agents")
+	}
+	userAgents.PrintTopN(n)
 
 	fmt.Println("")
 	fmt.Printf("Response time distribution:\n")
+	fmt.Printf("Average: %.3f ms\n", avg*1000)
 	fmt.Printf("Max: %.3f ms\n", large*1000)
 	fmt.Printf("Min: %.3f ms\n", small*1000)
 

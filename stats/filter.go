@@ -4,34 +4,77 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kencx/clp/entry"
 )
 
+var botMap = map[string]string{
+	"googlebot":               "Google",
+	"bingbot":                 "Bing",
+	"duckduckbot":             "DuckDuckGo",
+	"duckduckgo-favicons-bot": "DuckDuckGo",
+	"slurp":                   "Yahoo",
+	"yandexbot":               "Yandex",
+	"yandexfavicons":          "Yandex",
+	"baiduspider":             "Baidu",
+	"exabot":                  "ExaLead",
+	"semrushbot":              "SemRush",
+	"bytespider":              "",
+	"ccbot":                   "",
+	"facebookbot":             "Facebook",
+	"gptbot":                  "",
+	"java":                    "Java",
+	"censysinspect":           "",
+	"internetmeasurement":     "Internet Measurement",
+	"go-http-client":          "Go HTTP Client",
+	"okhttp":                  "okhttp",
+	"python-requests":         "Python Requests",
+	"scrapy":                  "Scrapy",
+}
+
 func FilterByBots(entries entry.Entries) (entry.Entries, error) {
 	var filtered entry.Entries
-	_ = map[string]string{
-		"Google":        "Googlebot",
-		"Bing":          "Bingbot",
-		"DuckDuckGo":    "DuckDuckBot",
-		"Yahoo! Search": "Slurp",
-		"Yandex":        "YandexBot",
-		"Baidu":         "Baiduspider",
-		"Exalead":       "ExaBot",
-	}
 
 	for _, entry := range entries {
-		_, err := getStructField(entry, "UserAgent")
+		userAgent, err := getStructField(entry, "UserAgent")
 		if err != nil {
 			return nil, err
 		}
 
-		// TODO check for bot
-		filtered = append(filtered, entry)
+		if userAgent == "" {
+			filtered = append(filtered, entry)
+			continue
+		}
+
+		var match bool
+		userAgent = strings.ToLower(userAgent)
+		for k := range botMap {
+			match = strings.Contains(userAgent, k)
+			if match {
+				break
+			}
+		}
+
+		if !match {
+			filtered = append(filtered, entry)
+		}
 	}
 
 	return filtered, nil
+}
+
+func Filter404(entries entry.Entries) entry.Entries {
+	var filtered entry.Entries
+
+	for _, entry := range entries {
+		if entry.Status != 404 {
+			filtered = append(filtered, entry)
+		}
+	}
+
+	return filtered
 }
 
 func FilterByPeriod(entries entry.Entries, period string) (entry.Entries, error) {

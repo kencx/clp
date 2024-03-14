@@ -23,7 +23,8 @@ type Request struct {
 	Host       string `json:"host"`
 	Uri        string `json:"uri"`
 	Headers    struct {
-		UserAgent []string `json:"User-Agent"`
+		UserAgent   []string `json:"User-Agent"`
+		CfIpCountry []string `json:"Cf-Ipcountry,omitempty"`
 	} `json:"headers"`
 	TLS struct {
 		Resumed     bool
