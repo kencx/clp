@@ -32,6 +32,10 @@ var botMap = map[string]string{
 	"okhttp":                  "okhttp",
 	"python-requests":         "Python Requests",
 	"scrapy":                  "Scrapy",
+	"dotbot":                  "DotBot",
+	"paloalto":                "Palo Alto",
+	"expanse":                 "Palo Alto",
+	"petalbot":                "PetalBot",
 }
 
 func FilterByBots(entries entry.Entries) (entry.Entries, error) {
