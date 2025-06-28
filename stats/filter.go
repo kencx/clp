@@ -36,6 +36,8 @@ var botMap = map[string]string{
 	"paloalto":                "Palo Alto",
 	"expanse":                 "Palo Alto",
 	"petalbot":                "PetalBot",
+	"Uptime-Kuma":             "Uptime Kuma",
+	"amazonbot":               "Amazon",
 }
 
 func FilterByBots(entries entry.Entries) (entry.Entries, error) {
@@ -55,7 +57,7 @@ func FilterByBots(entries entry.Entries) (entry.Entries, error) {
 		var match bool
 		userAgent = strings.ToLower(userAgent)
 		for k := range botMap {
-			match = strings.Contains(userAgent, k)
+			match = strings.Contains(userAgent, strings.ToLower(k))
 			if match {
 				break
 			}
