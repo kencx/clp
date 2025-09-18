@@ -3,8 +3,12 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/kencx/clp/entry"
 	"github.com/kencx/clp/file"
 	"github.com/kencx/clp/stats"
 )
@@ -28,7 +32,7 @@ const (
 
 func Run() int {
 	var (
-		filename string
+		path     string
 		period   string
 		number   int
 		crawlers bool
@@ -38,7 +42,7 @@ func Run() int {
 		help     bool
 	)
 
-	flag.StringVar(&filename, "file", "access.log", "path to access log")
+	flag.StringVar(&path, "file", "access.log", "path to access log")
 	flag.StringVar(&period, "time", "30d", "time period to filter")
 	flag.IntVar(&number, "number", 5, "top N")
 	flag.BoolVar(&crawlers, "no-crawler", false, "exclude crawlers")
@@ -65,17 +69,42 @@ func Run() int {
 		return 1
 	}
 
-	f, err := os.Open(filename)
+	fi, err := os.Stat(path)
 	if err != nil {
 		fmt.Println(err)
 		return 1
 	}
-	defer f.Close()
 
-	entries, err := file.Decode(f)
-	if err != nil {
-		fmt.Println(err)
-		return 1
+	var entries entry.Entries
+
+	if fi.IsDir() {
+		if err := filepath.Walk(path, func(filename string, info fs.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			// ignore subdirectories
+			if info.IsDir() {
+				return nil
+			}
+
+			entry, err := process(filename)
+			if err != nil {
+				return err
+			}
+
+			entries = append(entries, entry...)
+			return nil
+		}); err != nil {
+			fmt.Println(err)
+			return 1
+		}
+	} else {
+		entries, err = process(path)
+		if err != nil {
+			fmt.Println(err)
+			return 1
+		}
 	}
 
 	if err = stats.Summary(entries, number, period, crawlers, notFound, color); err != nil {
@@ -84,4 +113,28 @@ func Run() int {
 	}
 
 	return 0
+}
+
+func process(filename string) (entry.Entries, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var entries entry.Entries
+
+	if strings.Contains(f.Name(), ".gz") {
+		entries, err = file.DecodeGz(f)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		entries, err = file.Decode(f)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return entries, nil
 }
